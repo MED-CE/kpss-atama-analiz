@@ -32,7 +32,7 @@ async def run_ingestion_pipeline():
             existing = await session.execute(
                 select(PlacementPeriod).where(
                     PlacementPeriod.year == year,
-                    PlacementPeriod.name == period['title']
+                    PlacementPeriod.period == period['title']
                 )
             )
             
@@ -40,7 +40,7 @@ async def run_ingestion_pipeline():
                 logger.info(f"Adding new period to DB: {year} - {period['title']}")
                 new_period = PlacementPeriod(
                     year=year,
-                    name=period['title'],
+                    period=period['title'],
                     is_active=True
                 )
                 session.add(new_period)
