@@ -20,7 +20,7 @@ export default function FilterTable() {
       {/* Filter Section */}
       <Card className="border-gray-200 shadow-sm">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Branş/Bölüm</label>
@@ -81,12 +81,23 @@ export default function FilterTable() {
                 </select>
                 <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
               </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Öğrenim Seviyesi</label>
+              <div className="relative">
+                <select className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                  <option>Tümü</option>
+                  <option>Lise (Ortaöğretim)</option>
+                  <option>Önlisans</option>
+                  <option>Lisans</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
+              </div>
             </div>
-            
+
           </div>
 
-          <div className="flex justify-between items-end mt-4">
-            <div className="space-y-2 w-48">
+          <div className="flex flex-wrap justify-between items-end mt-4 gap-4">
+            <div className="space-y-2 w-full md:w-48">
               <label className="text-sm font-medium text-gray-700">Yıl</label>
               <div className="relative">
                 <select className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
