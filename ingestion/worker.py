@@ -9,7 +9,7 @@ sys.path.append(root_dir)
 sys.path.append(os.path.join(root_dir, "backend"))
 
 from discovery import discover_placement_periods
-from backend.database.database import async_session_maker
+from backend.database.database import AsyncSessionLocal
 from backend.database.models import PlacementPeriod
 from sqlalchemy import select
 
@@ -24,7 +24,7 @@ async def run_ingestion_pipeline():
     logger.info(f"Discovered {len(periods)} potential placement periods.")
     
     # 2. Database Insert for Periods
-    async with async_session_maker() as session:
+    async with AsyncSessionLocal() as session:
         for period in periods:
             # Extract year and period number (e.g. 2024/1 -> year: 2024, is_first: True)
             year = period.get('year')
