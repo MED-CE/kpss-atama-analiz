@@ -1,0 +1,9 @@
+httpx
+beautifulsoup4
+pdfplumber
+pandas
+openpyxl
+sqlalchemy
+asyncpg
+python-dotenv
+aiosqlite
