@@ -98,3 +98,87 @@ async def get_cities(db: AsyncSession = Depends(get_db)):
 async def get_institutions(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(models.Institution).order_by(models.Institution.normalized_name))
     return result.scalars().all()
+
+@router.get("/analytics/yearly", response_model=List[schemas.YearlyAnalyticsResponse])
+async def get_yearly_analytics(db: AsyncSession = Depends(get_db)):
+    # Group by year, sum quota, sum placed, min/max score, count distinct cities/institutions
+    query = (
+        select(
+            models.PlacementPeriod.year,
+            func.sum(models.Position.quota).label("total_quota"),
+            func.sum(models.PlacementScore.placed_count).label("total_placed"),
+            func.min(models.PlacementScore.min_score).label("min_score_overall"),
+            func.max(models.PlacementScore.max_score).label("max_score_overall"),
+            func.count(func.distinct(models.Position.city_id)).label("cities_count"),
+            func.count(func.distinct(models.Position.institution_id)).label("institutions_count"),
+        )
+        .select_from(models.PlacementPeriod)
+        .join(models.Position, models.Position.placement_period_id == models.PlacementPeriod.id)
+        .join(models.PlacementScore, models.PlacementScore.position_id == models.Position.id)
+        .group_by(models.PlacementPeriod.year)
+        .order_by(models.PlacementPeriod.year.desc())
+    )
+    
+    result = await db.execute(query)
+    rows = result.all()
+    
+    return [
+        schemas.YearlyAnalyticsResponse(
+            year=row.year,
+            total_quota=row.total_quota or 0,
+            total_placed=row.total_placed or 0,
+            min_score_overall=row.min_score_overall,
+            max_score_overall=row.max_score_overall,
+            cities_count=row.cities_count or 0,
+            institutions_count=row.institutions_count or 0
+        )
+        for row in rows
+    ]
+
+@router.get("/qualifications/{code}/analytics", response_model=schemas.QualificationAnalyticsResponse)
+async def get_qualification_analytics(code: str, db: AsyncSession = Depends(get_db)):
+    # Verify qualification exists
+    qual_query = await db.execute(select(models.Qualification).where(models.Qualification.code == code))
+    qual = qual_query.scalars().first()
+    if not qual:
+        raise HTTPException(status_code=404, detail="Qualification not found")
+        
+    query = (
+        select(
+            models.PlacementPeriod.year,
+            func.sum(models.Position.quota).label("total_quota"),
+            func.sum(models.PlacementScore.placed_count).label("total_placed"),
+            func.min(models.PlacementScore.min_score).label("min_score_overall"),
+            func.max(models.PlacementScore.max_score).label("max_score_overall"),
+            func.count(func.distinct(models.Position.city_id)).label("cities_count"),
+            func.count(func.distinct(models.Position.institution_id)).label("institutions_count"),
+        )
+        .select_from(models.PlacementPeriod)
+        .join(models.Position, models.Position.placement_period_id == models.PlacementPeriod.id)
+        .join(models.position_qualifications, models.position_qualifications.c.position_id == models.Position.id)
+        .join(models.PlacementScore, models.PlacementScore.position_id == models.Position.id)
+        .where(models.position_qualifications.c.qualification_id == qual.id)
+        .group_by(models.PlacementPeriod.year)
+        .order_by(models.PlacementPeriod.year.desc())
+    )
+    
+    result = await db.execute(query)
+    rows = result.all()
+    
+    yearly_stats = [
+        schemas.YearlyAnalyticsResponse(
+            year=row.year,
+            total_quota=row.total_quota or 0,
+            total_placed=row.total_placed or 0,
+            min_score_overall=row.min_score_overall,
+            max_score_overall=row.max_score_overall,
+            cities_count=row.cities_count or 0,
+            institutions_count=row.institutions_count or 0
+        )
+        for row in rows
+    ]
+    
+    return schemas.QualificationAnalyticsResponse(
+        code=code,
+        yearly_stats=yearly_stats
+    )
