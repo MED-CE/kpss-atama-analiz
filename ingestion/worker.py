@@ -3,8 +3,10 @@ import logging
 import os
 import sys
 
-# Add parent directory to python path so we can import backend modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add parent directory and backend directory to python path
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_dir)
+sys.path.append(os.path.join(root_dir, "backend"))
 
 from discovery import discover_placement_periods
 from backend.database.database import async_session_maker
