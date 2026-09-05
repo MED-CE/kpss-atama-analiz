@@ -1,6 +1,15 @@
 import asyncio
 import logging
+import os
+import sys
+
+# Add parent directory to python path so we can import backend modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from discovery import discover_placement_periods
+from backend.database.database import async_session_maker
+from backend.database.models import PlacementPeriod
+from sqlalchemy import select
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -12,23 +21,30 @@ async def run_ingestion_pipeline():
     periods = await discover_placement_periods()
     logger.info(f"Discovered {len(periods)} potential placement periods.")
     
-    for period in periods:
-        logger.info(f"Processing Period: {period['year']}/{period['period']} - {period['title']}")
-        
-        # 2. Check Database if already processed
-        # TODO: Implement DB check
-        
-        # 3. Document Download (Phase 5)
-        # TODO: Implement Download to Azure Blob/Appwrite
-        
-        # 4. Parsing (Phase 6)
-        # TODO: Implement pdfplumber/pandas parser based on file type
-        
-        # 5. Validation (Phase 7)
-        # TODO: Implement quota >= 0, min <= max score validation
-        
-        # 6. Database Insert (Phase 7)
-        # TODO: Implement SQLAlchemy Session commits
+    # 2. Database Insert for Periods
+    async with async_session_maker() as session:
+        for period in periods:
+            # Extract year and period number (e.g. 2024/1 -> year: 2024, is_first: True)
+            year = period.get('year')
+            # Check if it already exists
+            existing = await session.execute(
+                select(PlacementPeriod).where(
+                    PlacementPeriod.year == year,
+                    PlacementPeriod.name == period['title']
+                )
+            )
+            
+            if not existing.scalars().first():
+                logger.info(f"Adding new period to DB: {year} - {period['title']}")
+                new_period = PlacementPeriod(
+                    year=year,
+                    name=period['title'],
+                    is_active=True
+                )
+                session.add(new_period)
+                
+        await session.commit()
+        logger.info("Saved all new placement periods to Neon Database!")
         
     logger.info("Ingestion Pipeline Completed.")
 
