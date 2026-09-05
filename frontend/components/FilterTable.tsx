@@ -81,6 +81,8 @@ export default function FilterTable() {
                 </select>
                 <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
               </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Öğrenim Seviyesi</label>
               <div className="relative">
